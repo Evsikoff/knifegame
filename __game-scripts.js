@@ -1466,14 +1466,41 @@ Savefile.resetOnLoad = 0, Savefile.nameFile = "SliceMasterPoki_Save", Savefile.a
 }, Savefile.reset = function() {
     for (var e in Savefile.data) Savefile.data[e] = Savefile.defData[e];
     Savefile.autoSave && Savefile.save()
-}, Savefile.storeOb = null, Savefile.load = function() {
+}, Savefile.storeOb = null, Savefile.yandexCloudLoaded = !1, Savefile.loadFromLocalStorage = function() {
     if (Savefile.storeOb = store.get(Savefile.nameFile), Savefile.storeOb || (Savefile.storeOb = {}), Savefile.resetOnLoad) Savefile.reset();
     else
         for (var e in Savefile.data) e in Savefile.storeOb ? Savefile.data[e] = Savefile.storeOb[e] : Savefile.data[e] = Savefile.defData[e]
+}, Savefile.load = async function() {
+    // First try to load from Yandex Cloud
+    if (window.loadFromYandexCloud) {
+        try {
+            var cloudData = await window.loadFromYandexCloud();
+            if (cloudData && Object.keys(cloudData).length > 0) {
+                console.log("Loaded save data from Yandex Cloud");
+                Savefile.storeOb = cloudData;
+                Savefile.yandexCloudLoaded = !0;
+                for (var e in Savefile.data) e in Savefile.storeOb ? Savefile.data[e] = Savefile.storeOb[e] : Savefile.data[e] = Savefile.defData[e];
+                // Also save to localStorage for backup
+                store.set(Savefile.nameFile, Savefile.storeOb);
+                return;
+            }
+        } catch (err) {
+            console.log("Failed to load from Yandex Cloud, falling back to localStorage:", err);
+        }
+    }
+    // Fallback to localStorage
+    Savefile.loadFromLocalStorage();
 }, Savefile.save = function() {
     if (!Savefile.storeOb) return 1;
     for (var e in Savefile.data) Savefile.storeOb[e] = Savefile.data[e];
-    store.set(Savefile.nameFile, Savefile.storeOb)
+    // Save to localStorage
+    store.set(Savefile.nameFile, Savefile.storeOb);
+    // Also save to Yandex Cloud
+    if (window.saveToYandexCloud) {
+        window.saveToYandexCloud(Savefile.storeOb).catch(function(err) {
+            console.log("Failed to save to Yandex Cloud:", err);
+        });
+    }
 }, Savefile.get = function(e) {
     if ((e = Savefile.nameFile + e) in Savefile.data) return Savefile.data[e];
     console.log("Savefile.get() - keyname doesn't exist: '" + e + "'")
@@ -1549,8 +1576,22 @@ FullscreenImage.attributes.add("stretch", {
 };
 var sdkHandler, Game = pc.createScript("game");
 
-function initializeGamePoki() {
-    console.log("SDK is now ready, starting the game..."), PokiSDK.gameLoadingFinished(), this.muteSoundState = !1, this.muteMusicState = !1, Game.instance.initialize2()
+async function initializeGamePoki() {
+    console.log("SDK is now ready, starting the game...");
+    // Block user interactions during loading
+    Input.mouseDis = !0;
+    // Signal that game is ready
+    PokiSDK.gameLoadingFinished();
+    // Check language from Yandex SDK
+    if (window.ysdk && window.ysdk.environment && window.ysdk.environment.i18n) {
+        var lang = window.ysdk.environment.i18n.lang;
+        console.log("Yandex Game language: " + lang);
+    }
+    // Start gameplay
+    PokiSDK.gameplayStart();
+    this.muteSoundState = !1;
+    this.muteMusicState = !1;
+    Game.instance.initialize2();
 }
 async function initializeGame() {
     (sdkHandler = new CrazyGamesSDKHandler).setSDKReadyCallback((async () => {
@@ -1626,16 +1667,48 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
         }), Game.instance = this, this.shopRewardCooldownCurr = 0, this.shopRewardCooldown = 300, this.hdEnabled = !1, this.slomo = 1, this.streak = 0, this.streakTimer = 0, pc.Application.getApplication().scene.layers.getLayerByName("UIWorld").clearDepthBuffer = !0, this.canvas = this.app.root.findByName("Canvas"), this.canvas2 = this.app.root.findByName("Canvas2"), this.whiteColor = (new pc.Color).fromString("#FFFFFF"), this.yellowColor = (new pc.Color).fromString("#FFF25E"), this.orangeColor = (new pc.Color).fromString("#FFA355"), this.greenColor = (new pc.Color).fromString("#89FF25"), this.blackColor = (new pc.Color).fromString("#000000"), Game.state = 0, this.controlsEnabled = !0, this.gotReviveChance = !1, this.grounds = [], this.lastPos = new pc.Vec3(0, 0, 0), this.levels = [], this.levelLengths = [], this.levelInfos = [], e = 0; e <= 80; e++) l = this.app.root.findByName("Level" + e.toString()), l ? (l.tags.add("level"), l.enabled = !1, this.levels.push(l)) : this.levels.push(null);
     this.levelCreationThresholdX = 180, this.levelCreationEnabled = !1, this.levelObjectsE = new pc.Entity, this.app.root.addChild(this.levelObjectsE), this.levelObjectsSliced = new pc.Entity, this.app.root.addChild(this.levelObjectsSliced), this.gameOverReason = "", this.bonusOperator = null, this.resultType = 0, this.gameOver.enabled = !1, this.uiFailed.enabled = !1, this.uiCompleted.enabled = !1, this.money = 0, this.envType = 1, this.envTypeSameCount = 0, Savefile.addKey("bestScore", 0), Savefile.addKey("money", 0), Savefile.addKey("currLevel", 0), Savefile.addKey("firstLaunch", 1), Savefile.addKey("firstKnifeTapped", 0), Savefile.addKey("chosenSkinId", 0), Savefile.addKey("envType", 1), Savefile.addKey("envTypeSameCount", 0), ShopController.createSkins();
     for (var e = 0; e < ShopController.shopItems.length; e++) Savefile.addKey("skin" + e.toString(), 0);
-    Savefile.load(), this.bestScore = Savefile.get("bestScore"), this.money = Savefile.get("money"), this.currLevel = Savefile.get("currLevel"), this.firstLaunch = Savefile.get("firstLaunch"), this.firstKnifeTapped = Savefile.get("firstKnifeTapped"), this.chosenSkinId = Savefile.get("chosenSkinId"), this.envType = Savefile.get("envType"), this.envTypeSameCount = Savefile.get("envTypeSameCount"), this.money < 0 && (this.money = 5e4), this.lastCurrLevel = -1;
-    for (e = 0; e < ShopController.shopItems.length; e++) {
-        var t = Savefile.get("skin" + e.toString());
-        t = 0 !== t, 0 === e && (t = !0), ShopController.shopItems[e].unlocked = t
-    }
-    this.currScore = 0, this.score = 0, this.moneyEarned = 0, this.totalEarned = 0, this.bonusEarned = 0, this.firstJump = !0, this.addedLevelsCount = 0, this.bonusReady = !1, this.stepsToBonusLevel = 3, this.levelUpperPlank = 20, Input.mouseDis = !0, Game.testAPI ? (this.currLevel = 2, this.initialize2()) : PokiSDK.init().then((() => {
-        console.log("Poki SDK successfully initialized"), initializeGamePoki()
-    })).catch((() => {
-        console.log("Initialized, something went wrong, load you game anyway"), initializeGamePoki()
-    }))
+    // Load save data (will try Yandex Cloud first, then localStorage)
+    var gameInstance = this;
+    (async function() {
+        await Savefile.load();
+        gameInstance.bestScore = Savefile.get("bestScore");
+        gameInstance.money = Savefile.get("money");
+        gameInstance.currLevel = Savefile.get("currLevel");
+        gameInstance.firstLaunch = Savefile.get("firstLaunch");
+        gameInstance.firstKnifeTapped = Savefile.get("firstKnifeTapped");
+        gameInstance.chosenSkinId = Savefile.get("chosenSkinId");
+        gameInstance.envType = Savefile.get("envType");
+        gameInstance.envTypeSameCount = Savefile.get("envTypeSameCount");
+        gameInstance.money < 0 && (gameInstance.money = 5e4);
+        gameInstance.lastCurrLevel = -1;
+        for (var i = 0; i < ShopController.shopItems.length; i++) {
+            var t = Savefile.get("skin" + i.toString());
+            t = 0 !== t, 0 === i && (t = !0), ShopController.shopItems[i].unlocked = t;
+        }
+        gameInstance.currScore = 0;
+        gameInstance.score = 0;
+        gameInstance.moneyEarned = 0;
+        gameInstance.totalEarned = 0;
+        gameInstance.bonusEarned = 0;
+        gameInstance.firstJump = !0;
+        gameInstance.addedLevelsCount = 0;
+        gameInstance.bonusReady = !1;
+        gameInstance.stepsToBonusLevel = 3;
+        gameInstance.levelUpperPlank = 20;
+        Input.mouseDis = !0;
+        if (Game.testAPI) {
+            gameInstance.currLevel = 2;
+            gameInstance.initialize2();
+        } else {
+            PokiSDK.init().then(function() {
+                console.log("Yandex SDK successfully initialized");
+                initializeGamePoki();
+            }).catch(function() {
+                console.log("Initialized, something went wrong, load game anyway");
+                initializeGamePoki();
+            });
+        }
+    })()
 }, Game.prototype.adPauseGame = function() {
     console.log("Game paused, audio muted."), Input.mouseDis = !0, this.inputBlockTimer = 0, this.muteSoundState = GameAudio.mute, this.muteMusicState = GameAudio.muteMus, GameAudio.switch(!0), GameAudio.switchMusic(!0)
 }, Game.prototype.adResumeGame = function() {
@@ -1793,7 +1866,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
     if (this.streakTimer > 0 && (this.streakTimer -= e, this.streakTimer <= 0)) {
         if (this.streak > 18) {
             var t, a = this.whiteColor;
-            this.streak > 50 ? (a = this.yellowColor, t = MathUtil.choose("INCREDIBLE!", "TERRIFIC!", "FANTASTIC!")) : t = this.streak > 25 ? MathUtil.choose("AMAZING!", "AWESOME!", "WOW!") : MathUtil.choose("NICE!", "GREAT!", "EXCELLENT!"), Game.instance.showStreakText(t, 0, 1, a, 1, 1), GameAudio.play("streak")
+            this.streak > 50 ? (a = this.yellowColor, t = MathUtil.choose("НЕВЕРОЯТНО!", "ПОТРЯСАЮЩЕ!", "ФАНТАСТИКА!")) : t = this.streak > 25 ? MathUtil.choose("ВЕЛИКОЛЕПНО!", "КРУТО!", "ВАУ!") : MathUtil.choose("ОТЛИЧНО!", "СУПЕР!", "ПРЕКРАСНО!"), Game.instance.showStreakText(t, 0, 1, a, 1, 1), GameAudio.play("streak")
         }
         this.streak = 0, this.streakTimer = 0
     }
@@ -1816,7 +1889,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
 }, Game.prototype.restart = function(e) {
     Knife.instance.trail1.flushTrail(), Knife.instance.trail2.flushTrail(), e && (UiMainMenu.hideCap = !0), Game.state = Game.STATE_INTRO, this.gotReviveChance = !0, this.pause(!1), this.streak = 0, this.streakTimer = 0, this.levelUpperPlank = 0, this.loadLevel();
     var t = Knife.instance.entity.getPosition();
-    (this.setupPlayingCamera(!0), this.firstJump = !0, Game.bonusLevel ? (Environment.instance.setType(6), this.interface.enabled = !0, this.mainMenu.enabled = !1) : (this.currLevel != this.lastCurrLevel && (this.lastCurrLevel = this.currLevel), this.moneyEarned = 0, this.score = 0, this.envTypeSameCount >= 4 ? (Environment.instance.switchType(), Game.instance.envType = Environment.instance.type, this.envTypeSameCount = 0) : Environment.instance.setType(Game.instance.envType), this.saveGame(), this.interface.enabled = !1, 0 == this.currLevel ? this.mainMenu.enabled = !1 : this.mainMenu.enabled = !0), e) ? UiMainMenu.hideCap && (this.levText && (this.levText.destroy(), this.levText = null), this.levText = this.showLvlText("LEVEL " + this.currLevel.toString(), t.x + 4.5, t.y + 1)): CameraController.instance.camShift.y = .5;
+    (this.setupPlayingCamera(!0), this.firstJump = !0, Game.bonusLevel ? (Environment.instance.setType(6), this.interface.enabled = !0, this.mainMenu.enabled = !1) : (this.currLevel != this.lastCurrLevel && (this.lastCurrLevel = this.currLevel), this.moneyEarned = 0, this.score = 0, this.envTypeSameCount >= 4 ? (Environment.instance.switchType(), Game.instance.envType = Environment.instance.type, this.envTypeSameCount = 0) : Environment.instance.setType(Game.instance.envType), this.saveGame(), this.interface.enabled = !1, 0 == this.currLevel ? this.mainMenu.enabled = !1 : this.mainMenu.enabled = !0), e) ? UiMainMenu.hideCap && (this.levText && (this.levText.destroy(), this.levText = null), this.levText = this.showLvlText("УРОВЕНЬ " + this.currLevel.toString(), t.x + 4.5, t.y + 1)): CameraController.instance.camShift.y = .5;
     UiMainMenu.hideCap = !1, Environment.instance.createGrounds(), this.uiFailed.enabled = !1, this.uiCompleted.enabled = !1, this.controlsEnabled = !0
 }, Game.noDebug = !0, Game.levelDebug = !1, Game.debugOutput = !1, Game.prototype.update = function(e) {
     if (this.inputBlockTimer > 0 ? (Game.instance.uiAdLoading.enabled = !0, this.inputBlockTimer -= e, this.inputBlockTimer <= 0 && (this.inputBlockTimer = 0, Input.mouseDis = !1)) : Game.instance.uiAdLoading.enabled = !1, window.scrollTo(0, 10), this.setResolution(), this.shopRewardCooldownCurr > 0 && (this.shopRewardCooldownCurr -= e), Game.state == Game.STATE_PLAYING) {
@@ -2508,7 +2581,7 @@ FinishController.attributes.add("blocks", {
     }
     MathUtil.shuffleArray(FinishController.blockData), (o = this.blocks[0].getLocalPosition().clone()).y = 0, r = this.textEntity.getLocalPosition().clone();
     for (p = 0; p < FinishController.blockData.length; p++) a = (e = FinishController.blockData[p]).blockType, 50 == e.count && (i = e), e.text.element.text = a.text, o.y += .5 * e.sizeY, e.entity.setLocalPosition(o.x, o.y, o.z), e.text.setLocalPosition(r.x, o.y, r.z), o.y += .5 * e.sizeY;
-    t ? (i.text.element.text = "BONUS!", i.text.script.scaler.enabled = !0) : (i.text.script.scaler.enabled = !1, i.text.setLocalScale(.01, .01, .01)), o.y += .5 * this.lastBlockSizeY, this.lastBlock.setLocalPosition(o.x, o.y, o.z)
+    t ? (i.text.element.text = "БОНУС!", i.text.script.scaler.enabled = !0) : (i.text.script.scaler.enabled = !1, i.text.setLocalScale(.01, .01, .01)), o.y += .5 * this.lastBlockSizeY, this.lastBlock.setLocalPosition(o.x, o.y, o.z)
 };
 var OperatorType = {
     ADD: {
@@ -2613,7 +2686,7 @@ FinishController.prototype.generateRandomBlockData = function() {
     var e, o, r, l;
     this.flag.enabled = !1, MathUtil.shuffleArray(FinishController.blockData), (o = this.blocks[0].getLocalPosition().clone()).y = 0, r = this.textEntity.getLocalPosition().clone();
     for (var i = 0; i < FinishController.blockData.length; i++) 50 == (e = FinishController.blockData[i]).count && (l = e), o.y += .5 * e.sizeY, e.entity.setLocalPosition(o.x, o.y, o.z), e.text.setLocalPosition(r.x, o.y, r.z), o.y += .5 * e.sizeY;
-    t ? (l.text.element.text = "BONUS!", l.text.script.scaler.enabled = !0) : (l.text.element.text = "50 x", l.text.script.scaler.enabled = !1, l.text.setLocalScale(.01, .01, .01)), o.y += .5 * this.lastBlockSizeY, this.lastBlock.setLocalPosition(o.x, o.y, o.z)
+    t ? (l.text.element.text = "БОНУС!", l.text.script.scaler.enabled = !0) : (l.text.element.text = "50 x", l.text.script.scaler.enabled = !1, l.text.setLocalScale(.01, .01, .01)), o.y += .5 * this.lastBlockSizeY, this.lastBlock.setLocalPosition(o.x, o.y, o.z)
 }, FinishController.prototype.update = function(t) {}, FinishController.prototype.showFlag = function() {
     setTimeout((function() {
         GameAudio.play("cracker");
@@ -3345,7 +3418,7 @@ var CurrLevelText = pc.createScript("currLevelText");
 CurrLevelText.prototype.initialize = function() {
     this.onEnable(), this.on("enable", this.onEnable, this)
 }, CurrLevelText.prototype.onEnable = function() {
-    Game.levelDebug ? this.entity.element.text = "level " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "level " + Game.instance.currLevel.toString()
+    Game.levelDebug ? this.entity.element.text = "уровень " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "уровень " + Game.instance.currLevel.toString()
 }, CurrLevelText.prototype.update = function(e) {};
 var WaterMaterial = pc.createScript("waterMaterial");
 WaterMaterial.attributes.add("uspeed", {

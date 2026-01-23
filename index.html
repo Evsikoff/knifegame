@@ -7,6 +7,8 @@
     <link rel="manifest" href="manifest.json">
     <style></style>
     <title>Кизлярский нож</title>
+    <!-- Yandex Games SDK -->
+    <script src="https://yandex.ru/games/sdk/v2"></script>
     <script src="playcanvas-stable.min.js"></script>
     <script src="__settings__.js"></script>
 </head>
@@ -14,22 +16,216 @@
     <script src="__modules__.js"></script>
     <script src="__start__.js"></script>
     <script src="__loading__.js"></script>
-    <!-- PokiSDK stub to prevent 'PokiSDK is not defined' error -->
+
+    <!-- Yandex SDK initialization and global handlers -->
     <script>
+        // Global variables for Yandex SDK
+        window.ysdk = null;
+        window.yandexPlayer = null;
+        window.isYandexSDKReady = false;
+
+        // Block right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // Block long-press context menu on mobile
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent pull-to-refresh
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent scroll on body
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Initialize Yandex SDK
+        async function initYandexSDK() {
+            try {
+                window.ysdk = await YaGames.init();
+                console.log('Yandex SDK initialized successfully');
+
+                // Get language from SDK
+                const lang = window.ysdk.environment.i18n.lang;
+                console.log('Yandex SDK language:', lang);
+
+                // Initialize player for cloud saves
+                try {
+                    window.yandexPlayer = await window.ysdk.getPlayer({ scopes: false });
+                    console.log('Yandex Player initialized');
+                } catch (playerError) {
+                    console.log('Player initialization without scopes failed, trying with scopes:', playerError);
+                    try {
+                        window.yandexPlayer = await window.ysdk.getPlayer();
+                        console.log('Yandex Player initialized with default scopes');
+                    } catch (e) {
+                        console.log('Could not initialize player:', e);
+                    }
+                }
+
+                window.isYandexSDKReady = true;
+                return true;
+            } catch (e) {
+                console.error('Yandex SDK initialization failed:', e);
+                window.isYandexSDKReady = false;
+                return false;
+            }
+        }
+
+        // Cloud save functions
+        async function saveToYandexCloud(data) {
+            if (window.yandexPlayer) {
+                try {
+                    await window.yandexPlayer.setData(data, true);
+                    console.log('Data saved to Yandex cloud');
+                    return true;
+                } catch (e) {
+                    console.error('Failed to save to Yandex cloud:', e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        async function loadFromYandexCloud() {
+            if (window.yandexPlayer) {
+                try {
+                    const data = await window.yandexPlayer.getData();
+                    console.log('Data loaded from Yandex cloud:', data);
+                    return data;
+                } catch (e) {
+                    console.error('Failed to load from Yandex cloud:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        // Rewarded video ad function
+        function showYandexRewardedAd(callbacks) {
+            if (window.ysdk) {
+                window.ysdk.adv.showRewardedVideo({
+                    callbacks: {
+                        onOpen: function() {
+                            console.log('Video ad open.');
+                            if (callbacks && callbacks.onOpen) callbacks.onOpen();
+                        },
+                        onRewarded: function() {
+                            console.log('Rewarded!');
+                            if (callbacks && callbacks.onRewarded) callbacks.onRewarded();
+                        },
+                        onClose: function() {
+                            console.log('Video ad closed.');
+                            if (callbacks && callbacks.onClose) callbacks.onClose();
+                        },
+                        onError: function(e) {
+                            console.log('Error while open video ad:', e);
+                            if (callbacks && callbacks.onError) callbacks.onError(e);
+                        }
+                    }
+                });
+            } else {
+                // Fallback if SDK not ready - grant reward anyway
+                console.log('Yandex SDK not ready, granting reward anyway');
+                if (callbacks && callbacks.onRewarded) callbacks.onRewarded();
+                if (callbacks && callbacks.onClose) callbacks.onClose();
+            }
+        }
+
+        // Fullscreen ad function
+        function showYandexFullscreenAd(callbacks) {
+            if (window.ysdk) {
+                window.ysdk.adv.showFullscreenAdv({
+                    callbacks: {
+                        onOpen: function() {
+                            console.log('Fullscreen ad open.');
+                            if (callbacks && callbacks.onOpen) callbacks.onOpen();
+                        },
+                        onClose: function(wasShown) {
+                            console.log('Fullscreen ad closed, wasShown:', wasShown);
+                            if (callbacks && callbacks.onClose) callbacks.onClose(wasShown);
+                        },
+                        onError: function(e) {
+                            console.log('Error while open fullscreen ad:', e);
+                            if (callbacks && callbacks.onError) callbacks.onError(e);
+                        }
+                    }
+                });
+            } else {
+                // Fallback if SDK not ready
+                if (callbacks && callbacks.onClose) callbacks.onClose(false);
+            }
+        }
+
+        // Ready and Gameplay API
+        function notifyGameReady() {
+            if (window.ysdk && window.ysdk.features && window.ysdk.features.LoadingAPI) {
+                window.ysdk.features.LoadingAPI.ready();
+                console.log('Yandex LoadingAPI.ready() called');
+            }
+        }
+
+        function notifyGameplayStart() {
+            if (window.ysdk && window.ysdk.features && window.ysdk.features.GameplayAPI) {
+                window.ysdk.features.GameplayAPI.start();
+                console.log('Yandex GameplayAPI.start() called');
+            }
+        }
+
+        function notifyGameplayStop() {
+            if (window.ysdk && window.ysdk.features && window.ysdk.features.GameplayAPI) {
+                window.ysdk.features.GameplayAPI.stop();
+                console.log('Yandex GameplayAPI.stop() called');
+            }
+        }
+
+        // PokiSDK compatibility layer for smooth migration
         window.PokiSDK = {
             init: function() {
-                return Promise.resolve();
+                return initYandexSDK();
             },
-            gameLoadingFinished: function() {},
-            gameplayStart: function() {},
-            gameplayStop: function() {},
+            gameLoadingFinished: function() {
+                notifyGameReady();
+            },
+            gameplayStart: function() {
+                notifyGameplayStart();
+            },
+            gameplayStop: function() {
+                notifyGameplayStop();
+            },
             commercialBreak: function(callback) {
-                if (callback) callback();
+                showYandexFullscreenAd({
+                    onOpen: callback,
+                    onClose: function() {}
+                });
                 return Promise.resolve();
             },
             rewardedBreak: function(callback) {
-                if (callback) callback();
-                return Promise.resolve(true);
+                return new Promise(function(resolve) {
+                    let rewarded = false;
+                    showYandexRewardedAd({
+                        onOpen: callback,
+                        onRewarded: function() {
+                            rewarded = true;
+                        },
+                        onClose: function() {
+                            resolve(rewarded);
+                        },
+                        onError: function() {
+                            resolve(false);
+                        }
+                    });
+                });
             }
         };
     </script>

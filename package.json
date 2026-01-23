@@ -1,0 +1,19 @@
+{
+  "name": "knifegame",
+  "version": "1.0.0",
+  "description": "",
+  "main": "__game-scripts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:62083/git/Evsikoff/knifegame"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "msdf-bmfont-xml": "^2.8.0"
+  }
+}
