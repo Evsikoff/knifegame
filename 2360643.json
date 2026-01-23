@@ -1,0 +1,61 @@
+{
+    "name": "Main Scene",
+    "entities": {
+        "root": {
+            "name": "Root",
+            "parent": null,
+            "children": ["camera", "light"],
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "components": {}
+        },
+        "camera": {
+            "name": "Camera",
+            "parent": "root",
+            "children": [],
+            "position": [0, 2, 5],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "components": {
+                "camera": {
+                    "enabled": true,
+                    "projection": 0,
+                    "fov": 45,
+                    "nearClip": 0.1,
+                    "farClip": 1000,
+                    "clearColor": [0.1, 0.1, 0.1, 1],
+                    "clearColorBuffer": true,
+                    "clearDepthBuffer": true,
+                    "priority": 0
+                }
+            }
+        },
+        "light": {
+            "name": "Directional Light",
+            "parent": "root",
+            "children": [],
+            "position": [0, 10, 0],
+            "rotation": [45, 0, 0],
+            "scale": [1, 1, 1],
+            "components": {
+                "light": {
+                    "enabled": true,
+                    "type": "directional",
+                    "color": [1, 1, 1],
+                    "intensity": 1,
+                    "castShadows": false
+                }
+            }
+        }
+    },
+    "settings": {
+        "render": {
+            "fog": "none",
+            "global_ambient": [0.2, 0.2, 0.2]
+        },
+        "physics": {
+            "gravity": [0, -9.81, 0]
+        }
+    }
+}
