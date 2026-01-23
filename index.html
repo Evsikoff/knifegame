@@ -14,6 +14,24 @@
     <script src="__modules__.js"></script>
     <script src="__start__.js"></script>
     <script src="__loading__.js"></script>
-    <script src="__game-scripts.js"></script>
+    <!-- PokiSDK stub to prevent 'PokiSDK is not defined' error -->
+    <script>
+        window.PokiSDK = {
+            init: function() {
+                return Promise.resolve();
+            },
+            gameLoadingFinished: function() {},
+            gameplayStart: function() {},
+            gameplayStop: function() {},
+            commercialBreak: function(callback) {
+                if (callback) callback();
+                return Promise.resolve();
+            },
+            rewardedBreak: function(callback) {
+                if (callback) callback();
+                return Promise.resolve(true);
+            }
+        };
+    </script>
 </body>
 </html>
