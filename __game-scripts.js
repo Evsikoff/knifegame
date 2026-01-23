@@ -3262,7 +3262,7 @@ ShopController.attributes.add("rewButton", {
 };
 var BestScore = pc.createScript("bestScore");
 BestScore.prototype.initialize = function() {}, BestScore.prototype.update = function(t) {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.bestScore === undefined) return;
     this.entity.element.text = Game.instance.bestScore.toString()
 };
 var UiInterface = pc.createScript("uiInterface");
@@ -3271,22 +3271,22 @@ UiInterface.instance = null, UiInterface.prototype.initialize = function() {
     var e = this.entity.screen;
     this.initialHeight = e.referenceResolution.y, this.onEnable(), this.on("enable", this.onEnable, this)
 }, UiInterface.prototype.onEnable = function() {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.score === undefined) return;
     var e = this.entity.screen;
     window.innerHeight > window.innerWidth ? (e.referenceResolution.y = this.initialHeight + 170, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)) : (e.referenceResolution.y = this.initialHeight, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)), Game.instance.paused ? (this.levText.enabled = !1, this.bonText.enabled = !1) : Game.bonusLevel ? (this.highFlyTime = 0, this.levText.enabled = !1, this.bonText.enabled = !0) : (this.highFlyTime = 0, Game.lvlTextShown ? this.levText.enabled = !1 : this.levText.enabled = !0, this.bonText.enabled = !1, Game.lvlTextShown = !1), this.score.script.counterText.setValue(Game.instance.score, Game.instance.score, 200)
 }, UiInterface.prototype.update = function(e) {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.score === undefined) return;
     this.score.element.text = "$ " + Game.instance.score.toString(), this.highFlyTime > 1 ? this.arrowDown.enabled = !0 : this.arrowDown.enabled = !1
 };
 var CoinsText = pc.createScript("coinsText");
 CoinsText.prototype.initialize = function() {
-    if (!Game.instance) { this.count = 0; return; }
+    if (!Game.instance || Game.instance.money === undefined) { this.count = 0; return; }
     this.count = Game.instance.money, this.entity.element.maxLines = 1, this.entity.element.width = 75, this.entity.parent.element.color = Game.instance.blackColor, this.entity.parent.element.opacity = .5, this.onEnable(), this.on("enable", this.onEnable, this)
 }, CoinsText.prototype.onEnable = function() {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.money === undefined) return;
     this.count = Game.instance.money
 }, CoinsText.prototype.update = function(t) {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.money === undefined) return;
     if (this.count = pc.math.lerp(this.count, Game.instance.money, 10 * t), this.count >= 1e3) {
         var e = this.count % 1e3;
         e = Math.floor(e / 100), this.entity.element.text = e > 0 ? Math.floor(this.count / 1e3).toString() + "." + e.toString() + "k" : Math.floor(this.count / 1e3).toString() + "k"
@@ -3424,7 +3424,7 @@ var CurrLevelText = pc.createScript("currLevelText");
 CurrLevelText.prototype.initialize = function() {
     this.onEnable(), this.on("enable", this.onEnable, this)
 }, CurrLevelText.prototype.onEnable = function() {
-    if (!Game.instance) return;
+    if (!Game.instance || Game.instance.currLevel === undefined) return;
     Game.levelDebug ? this.entity.element.text = "уровень " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "уровень " + Game.instance.currLevel.toString()
 }, CurrLevelText.prototype.update = function(e) {};
 var WaterMaterial = pc.createScript("waterMaterial");
