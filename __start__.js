@@ -123,18 +123,7 @@
     }
 
     function displayError(html) {
-        var preloader = document.getElementById('preloaderContainer');
-        if (preloader) {
-            preloader.style.display = 'none';
-        }
-
         var div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.top = '0';
-        div.style.left = '0';
-        div.style.width = '100%';
-        div.style.height = '100%';
-        div.style.zIndex = '9999';
         div.innerHTML = `<table style="background-color: #8CE; width: 100%; height: 100%;">
         <tr>
             <td align="center">
@@ -307,7 +296,6 @@
                 app.preload(() => {
                     app.scenes.loadScene(window.SCENE_PATH, (err) => {
                         if (err) {
-                        displayError('Could not load scene. Error: ' + err);
                             console.error(err);
                             return;
                         }

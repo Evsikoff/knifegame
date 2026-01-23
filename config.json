@@ -1,0 +1,15 @@
+{
+    "application_properties": {
+        "maxAssetRetries": 3,
+        "libraries": []
+    },
+    "preload_modules": [
+        {
+            "moduleName": "Ammo",
+            "glueUrl": "files/assets/262834298/1/ammo.wasm.js",
+            "wasmUrl": "files/assets/262834299/1/ammo.wasm.wasm",
+            "fallbackUrl": "files/assets/262834297/1/ammo.js",
+            "preload": false
+        }
+    ]
+}
