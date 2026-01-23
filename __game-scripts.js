@@ -3262,6 +3262,7 @@ ShopController.attributes.add("rewButton", {
 };
 var BestScore = pc.createScript("bestScore");
 BestScore.prototype.initialize = function() {}, BestScore.prototype.update = function(t) {
+    if (!Game.instance || Game.instance.bestScore === undefined) return;
     this.entity.element.text = Game.instance.bestScore.toString()
 };
 var UiInterface = pc.createScript("uiInterface");
@@ -3270,17 +3271,22 @@ UiInterface.instance = null, UiInterface.prototype.initialize = function() {
     var e = this.entity.screen;
     this.initialHeight = e.referenceResolution.y, this.onEnable(), this.on("enable", this.onEnable, this)
 }, UiInterface.prototype.onEnable = function() {
+    if (!Game.instance || Game.instance.score === undefined) return;
     var e = this.entity.screen;
     window.innerHeight > window.innerWidth ? (e.referenceResolution.y = this.initialHeight + 170, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)) : (e.referenceResolution.y = this.initialHeight, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)), Game.instance.paused ? (this.levText.enabled = !1, this.bonText.enabled = !1) : Game.bonusLevel ? (this.highFlyTime = 0, this.levText.enabled = !1, this.bonText.enabled = !0) : (this.highFlyTime = 0, Game.lvlTextShown ? this.levText.enabled = !1 : this.levText.enabled = !0, this.bonText.enabled = !1, Game.lvlTextShown = !1), this.score.script.counterText.setValue(Game.instance.score, Game.instance.score, 200)
 }, UiInterface.prototype.update = function(e) {
+    if (!Game.instance || Game.instance.score === undefined) return;
     this.score.element.text = "$ " + Game.instance.score.toString(), this.highFlyTime > 1 ? this.arrowDown.enabled = !0 : this.arrowDown.enabled = !1
 };
 var CoinsText = pc.createScript("coinsText");
 CoinsText.prototype.initialize = function() {
+    if (!Game.instance || Game.instance.money === undefined) { this.count = 0; return; }
     this.count = Game.instance.money, this.entity.element.maxLines = 1, this.entity.element.width = 75, this.entity.parent.element.color = Game.instance.blackColor, this.entity.parent.element.opacity = .5, this.onEnable(), this.on("enable", this.onEnable, this)
 }, CoinsText.prototype.onEnable = function() {
+    if (!Game.instance || Game.instance.money === undefined) return;
     this.count = Game.instance.money
 }, CoinsText.prototype.update = function(t) {
+    if (!Game.instance || Game.instance.money === undefined) return;
     if (this.count = pc.math.lerp(this.count, Game.instance.money, 10 * t), this.count >= 1e3) {
         var e = this.count % 1e3;
         e = Math.floor(e / 100), this.entity.element.text = e > 0 ? Math.floor(this.count / 1e3).toString() + "." + e.toString() + "k" : Math.floor(this.count / 1e3).toString() + "k"
@@ -3418,6 +3424,7 @@ var CurrLevelText = pc.createScript("currLevelText");
 CurrLevelText.prototype.initialize = function() {
     this.onEnable(), this.on("enable", this.onEnable, this)
 }, CurrLevelText.prototype.onEnable = function() {
+    if (!Game.instance || Game.instance.currLevel === undefined) return;
     Game.levelDebug ? this.entity.element.text = "уровень " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "уровень " + Game.instance.currLevel.toString()
 }, CurrLevelText.prototype.update = function(e) {};
 var WaterMaterial = pc.createScript("waterMaterial");
@@ -3464,7 +3471,7 @@ UiCompleted.attributes.add("textColors", {
     for (window.innerHeight > window.innerWidth ? (e.referenceResolution.y = this.initialHeight + 170, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)) : (e.referenceResolution.y = this.initialHeight, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)), this.countingTotal = !1, this.countingTotalResultBest = !1, this.prevBestScore = Game.instance.bestScore, Game.instance.bestScore < Game.instance.totalEarned && (Game.instance.bestScore = Game.instance.totalEarned); this.serps.length > 0;) {
         this.serps.pop().destroy()
     }
-    this.counterTimer = 0, this.counterId = 0, this.playSoundDelay = 1, this.earned.script.counterText.setValue(0, Game.instance.moneyEarned, 0), Game.instance.bonusOperator ? this.bonus.element.text = Game.instance.bonusOperator.text : this.bonus.element.text = "0", this.bonus.element.color = this.textColors[Game.instance.resultType], this.best.element.text = this.prevBestScore.toString(), this.total.element.color = this.bonusColors[0], this.totalUpper.element.color = this.bonusColors[0], 1 == Game.instance.resultType ? this.bonus.element.outlineColor = Game.instance.whiteColor : this.bonus.element.outlineColor = Game.instance.blackColor, this.total.script.counterText.setValue(0, Game.instance.totalEarned, 0), Game.instance.totalEarned > 0 ? this.rewButton.enabled = !0 : this.rewButton.enabled = !1, Game.instance.currLevel - 1 == 0 ? this.levelnum.element.text = "TUTORIAL COMPLETED!" : this.levelnum.element.text = "LEVEL " + (Game.instance.currLevel - 1).toString() + " COMPLETED!"
+    this.counterTimer = 0, this.counterId = 0, this.playSoundDelay = 1, this.earned.script.counterText.setValue(0, Game.instance.moneyEarned, 0), Game.instance.bonusOperator ? this.bonus.element.text = Game.instance.bonusOperator.text : this.bonus.element.text = "0", this.bonus.element.color = this.textColors[Game.instance.resultType], this.best.element.text = this.prevBestScore.toString(), this.total.element.color = this.bonusColors[0], this.totalUpper.element.color = this.bonusColors[0], 1 == Game.instance.resultType ? this.bonus.element.outlineColor = Game.instance.whiteColor : this.bonus.element.outlineColor = Game.instance.blackColor, this.total.script.counterText.setValue(0, Game.instance.totalEarned, 0), Game.instance.totalEarned > 0 ? this.rewButton.enabled = !0 : this.rewButton.enabled = !1, Game.instance.currLevel - 1 == 0 ? this.levelnum.element.text = "ОБУЧЕНИЕ ПРОЙДЕНО!" : this.levelnum.element.text = "УРОВЕНЬ " + (Game.instance.currLevel - 1).toString() + " ПРОЙДЕН!"
 }, UiCompleted.prototype.update = function(e) {
     if (this.countingTotal && (this.total.script.counterText.shownValue > this.prevBestScore && (this.countingTotalResultBest || (this.total.element.color = this.bonusColors[1], this.totalUpper.element.color = this.bonusColors[1], this.countingTotalResultBest = !0)), this.countingTotalResultBest && (this.best.element.text = this.total.script.counterText.shownValue.toString())), this.counterId > 3) return 1;
     this.counterTimer += e, this.playSoundDelay > 0 && (this.playSoundDelay -= e, this.playSoundDelay <= 0 && (0 == Game.instance.resultType ? (GameAudio.play("gamewin"), this.createSerpentines(15, new pc.Vec3(0, 25, 0), 150)) : 1 == Game.instance.resultType && GameAudio.play("gamefail"))), this.counterTimer > .75 && (this.counterId++, this.counterTimer = 0, 1 == this.counterId ? (Game.instance.moneyEarned > 0 && GameAudio.playEx("counter", 1), this.earned.script.counterText.changingSpeed = 3 * Game.instance.moneyEarned) : 2 == this.counterId || 3 == this.counterId && (this.countingTotal = !0, Game.instance.totalEarned > 0 && GameAudio.playEx("counter", 1), this.total.script.counterText.changingSpeed = 3 * Game.instance.totalEarned))
