@@ -16,8 +16,8 @@ msdfFont.chars.forEach(char => {
         height: char.height + 2,
         map: char.page || 0,
         xadvance: char.xadvance,
-        xoffset: glyphSize/2 - char.xoffset - 1,
-        yoffset: char.yoffset - 1,
+        xoffset: (glyphSize/2 - char.xoffset - 1) + 8, // Сдвинет текст вправо
+        yoffset: char.yoffset - 15,
         scale: 1,
         range: 4,
         bounds: [0, 0, char.width, char.height]
