@@ -9,11 +9,21 @@ body {
     height: 100%;
     overflow: hidden;
     background-color: #1d292c;
-    font-family: Helvetica, arial, sans-serif;
+    font-family: Arial, sans-serif;
     position: relative;
     width: 100%;
-
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    overscroll-behavior-y: contain;
+}
+
+body {
+    touch-action: none;
 }
 
 #application-canvas {

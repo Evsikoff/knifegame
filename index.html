@@ -7,6 +7,8 @@
     <link rel="manifest" href="manifest.json">
     <style></style>
     <title>Кизлярский нож</title>
+    <!-- Yandex Games SDK -->
+    <script src="https://sdk.games.s3.yandex.net/sdk.js"></script>
     <script src="playcanvas-stable.min.js"></script>
     <script src="__settings__.js"></script>
 </head>
@@ -14,24 +16,8 @@
     <script src="__modules__.js"></script>
     <script src="__start__.js"></script>
     <script src="__loading__.js"></script>
-    <!-- PokiSDK stub to prevent 'PokiSDK is not defined' error -->
     <script>
-        window.PokiSDK = {
-            init: function() {
-                return Promise.resolve();
-            },
-            gameLoadingFinished: function() {},
-            gameplayStart: function() {},
-            gameplayStop: function() {},
-            commercialBreak: function(callback) {
-                if (callback) callback();
-                return Promise.resolve();
-            },
-            rewardedBreak: function(callback) {
-                if (callback) callback();
-                return Promise.resolve(true);
-            }
-        };
+        document.addEventListener('contextmenu', event => event.preventDefault());
     </script>
 </body>
 </html>

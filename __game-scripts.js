@@ -1461,7 +1461,7 @@ pc.extend(pc, function() {
         t && t.addTweenManager()
     }();
 var Savefile = pc.createScript("savefile");
-Savefile.resetOnLoad = 0, Savefile.nameFile = "SliceMasterPoki_Save", Savefile.autoSave = !1, Savefile.data = {}, Savefile.defData = {}, Savefile.addKey = function(e, a) {
+Savefile.resetOnLoad = 0, Savefile.nameFile = "SliceMasterYandex_Save", Savefile.autoSave = !1, Savefile.data = {}, Savefile.defData = {}, Savefile.addKey = function(e, a) {
     e = Savefile.nameFile + e, Savefile.data[e] = a, Savefile.defData[e] = a
 }, Savefile.reset = function() {
     for (var e in Savefile.data) Savefile.data[e] = Savefile.defData[e];
@@ -1547,20 +1547,8 @@ FullscreenImage.attributes.add("stretch", {
 }, FullscreenImage.prototype.update = function(e) {
     this.screenComponent.referenceResolution.equals(this.previousReferenceResolution) || (this.previousReferenceResolution.copy(this.screenComponent.referenceResolution), this.updateSize())
 };
-var sdkHandler, Game = pc.createScript("game");
-
-function initializeGamePoki() {
-    console.log("SDK is now ready, starting the game..."), PokiSDK.gameLoadingFinished(), this.muteSoundState = !1, this.muteMusicState = !1, Game.instance.initialize2()
-}
-async function initializeGame() {
-    (sdkHandler = new CrazyGamesSDKHandler).setSDKReadyCallback((async () => {
-        if (console.log("SDK is now ready, starting the game..."), sdkHandler.preventDefaultScroll(), sdkHandler.startGameLoading(), sdkHandler.stopGameLoading(), sdkHandler.sdkLoaded) {
-            const e = await sdkHandler.getUserData();
-            console.log("User Data:", e)
-        }
-        Game.instance.initialize2()
-    })), await sdkHandler.initSDK()
-}
+var Game = pc.createScript("game");
+var ysdk;
 Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, Game.attributes.add("_LEVEL_NUMBER", {
     type: "number",
     default: 0
@@ -1626,39 +1614,108 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
         }), Game.instance = this, this.shopRewardCooldownCurr = 0, this.shopRewardCooldown = 300, this.hdEnabled = !1, this.slomo = 1, this.streak = 0, this.streakTimer = 0, pc.Application.getApplication().scene.layers.getLayerByName("UIWorld").clearDepthBuffer = !0, this.canvas = this.app.root.findByName("Canvas"), this.canvas2 = this.app.root.findByName("Canvas2"), this.whiteColor = (new pc.Color).fromString("#FFFFFF"), this.yellowColor = (new pc.Color).fromString("#FFF25E"), this.orangeColor = (new pc.Color).fromString("#FFA355"), this.greenColor = (new pc.Color).fromString("#89FF25"), this.blackColor = (new pc.Color).fromString("#000000"), Game.state = 0, this.controlsEnabled = !0, this.gotReviveChance = !1, this.grounds = [], this.lastPos = new pc.Vec3(0, 0, 0), this.levels = [], this.levelLengths = [], this.levelInfos = [], e = 0; e <= 80; e++) l = this.app.root.findByName("Level" + e.toString()), l ? (l.tags.add("level"), l.enabled = !1, this.levels.push(l)) : this.levels.push(null);
     this.levelCreationThresholdX = 180, this.levelCreationEnabled = !1, this.levelObjectsE = new pc.Entity, this.app.root.addChild(this.levelObjectsE), this.levelObjectsSliced = new pc.Entity, this.app.root.addChild(this.levelObjectsSliced), this.gameOverReason = "", this.bonusOperator = null, this.resultType = 0, this.gameOver.enabled = !1, this.uiFailed.enabled = !1, this.uiCompleted.enabled = !1, this.money = 0, this.envType = 1, this.envTypeSameCount = 0, Savefile.addKey("bestScore", 0), Savefile.addKey("money", 0), Savefile.addKey("currLevel", 0), Savefile.addKey("firstLaunch", 1), Savefile.addKey("firstKnifeTapped", 0), Savefile.addKey("chosenSkinId", 0), Savefile.addKey("envType", 1), Savefile.addKey("envTypeSameCount", 0), ShopController.createSkins();
     for (var e = 0; e < ShopController.shopItems.length; e++) Savefile.addKey("skin" + e.toString(), 0);
-    Savefile.load(), this.bestScore = Savefile.get("bestScore"), this.money = Savefile.get("money"), this.currLevel = Savefile.get("currLevel"), this.firstLaunch = Savefile.get("firstLaunch"), this.firstKnifeTapped = Savefile.get("firstKnifeTapped"), this.chosenSkinId = Savefile.get("chosenSkinId"), this.envType = Savefile.get("envType"), this.envTypeSameCount = Savefile.get("envTypeSameCount"), this.money < 0 && (this.money = 5e4), this.lastCurrLevel = -1;
-    for (e = 0; e < ShopController.shopItems.length; e++) {
-        var t = Savefile.get("skin" + e.toString());
-        t = 0 !== t, 0 === e && (t = !0), ShopController.shopItems[e].unlocked = t
+    Savefile.load();
+    this.currScore = 0, this.score = 0, this.moneyEarned = 0, this.totalEarned = 0, this.bonusEarned = 0, this.firstJump = !0, this.addedLevelsCount = 0, this.bonusReady = !1, this.stepsToBonusLevel = 3, this.levelUpperPlank = 20, Input.mouseDis = !0, Game.testAPI ? (this.currLevel = 2, this.initialize2()) : this.initializeGameYandex()
+}, Game.prototype.initializeGameYandex = function() {
+    YaGames.init().then(sdk => {
+        console.log('Yandex SDK initialized');
+        ysdk = sdk;
+        ysdk.getPlayer().getData().then(data => {
+            this.loadGameData(data);
+        }).catch(() => {
+            this.loadGameData(null);
+        });
+        ysdk.features.LoadingAPI.ready();
+        console.log('Language:', ysdk.environment.i18n.lang);
+        this.initialize2();
+    }).catch(console.error);
+}, Game.prototype.loadGameData = function(cloudData) {
+    if (cloudData) {
+        this.bestScore = cloudData.bestScore || 0;
+        this.money = cloudData.money || 0;
+        this.currLevel = cloudData.currLevel || 0;
+        this.firstLaunch = cloudData.firstLaunch || 1;
+        this.firstKnifeTapped = cloudData.firstKnifeTapped || 0;
+        this.chosenSkinId = cloudData.chosenSkinId || 0;
+        this.envType = cloudData.envType || 1;
+        this.envTypeSameCount = cloudData.envTypeSameCount || 0;
+        for (var e = 0; e < ShopController.shopItems.length; e++) {
+            var t = cloudData["skin" + e.toString()] || 0;
+            t = 0 !== t, 0 === e && (t = !0), ShopController.shopItems[e].unlocked = t
+        }
+    } else {
+        this.bestScore = Savefile.get("bestScore"), this.money = Savefile.get("money"), this.currLevel = Savefile.get("currLevel"), this.firstLaunch = Savefile.get("firstLaunch"), this.firstKnifeTapped = Savefile.get("firstKnifeTapped"), this.chosenSkinId = Savefile.get("chosenSkinId"), this.envType = Savefile.get("envType"), this.envTypeSameCount = Savefile.get("envTypeSameCount");
+        for (var e = 0; e < ShopController.shopItems.length; e++) {
+            var t = Savefile.get("skin" + e.toString());
+            t = 0 !== t, 0 === e && (t = !0), ShopController.shopItems[e].unlocked = t
+        }
     }
-    this.currScore = 0, this.score = 0, this.moneyEarned = 0, this.totalEarned = 0, this.bonusEarned = 0, this.firstJump = !0, this.addedLevelsCount = 0, this.bonusReady = !1, this.stepsToBonusLevel = 3, this.levelUpperPlank = 20, Input.mouseDis = !0, Game.testAPI ? (this.currLevel = 2, this.initialize2()) : PokiSDK.init().then((() => {
-        console.log("Poki SDK successfully initialized"), initializeGamePoki()
-    })).catch((() => {
-        console.log("Initialized, something went wrong, load you game anyway"), initializeGamePoki()
-    }))
+    this.money < 0 && (this.money = 5e4), this.lastCurrLevel = -1;
 }, Game.prototype.adPauseGame = function() {
     console.log("Game paused, audio muted."), Input.mouseDis = !0, this.inputBlockTimer = 0, this.muteSoundState = GameAudio.mute, this.muteMusicState = GameAudio.muteMus, GameAudio.switch(!0), GameAudio.switchMusic(!0)
 }, Game.prototype.adResumeGame = function() {
     console.log("Game resumed, audio unmuted."), Input.mouseDis = !1, this.inputBlockTimer = 0, GameAudio.switch(this.muteSoundState), GameAudio.switchMusic(this.muteMusicState)
-}, Game.prototype.requestRewardedAd = function(e) {
-    PokiSDK && (this.inputBlockTimer = 5, Input.mouseDis = !0, this.muteSoundState = GameAudio.mute, this.muteMusicState = GameAudio.muteMus, PokiSDK.rewardedBreak((() => {
-        Game.instance.adPauseGame()
-    })).then((t => {
-        t ? "function" == typeof e && e() : console.warn("Rewarded ad was not shown, no reward granted."), Game.instance.adResumeGame(), console.log("Rewarded break finished, proceeding to game.")
-    })))
-}, Game.prototype.requestAd = function() {
-    PokiSDK && (this.inputBlockTimer = 5, Input.mouseDis = !0, this.muteSoundState = GameAudio.mute, this.muteMusicState = GameAudio.muteMus, PokiSDK.commercialBreak((() => {
-        Game.instance.adPauseGame()
-    })).then((() => {
-        console.log("Commercial break finished, proceeding to game"), Game.instance.adResumeGame()
-    })))
 }, Game.prototype.initialize2 = function() {
-    Game.instance.uiAdLoading.enabled = !1, Game.instance.uiSplash.enabled = !1, setTimeout((function() {
-        FadeScreen.instance.show(.5, 0, !0, (function() {
-            Input.mouseDis = !1, 1 == Game.instance.currLevel && 0 == Game.levelDebug && (Game.instance.interface.enabled = !1, Game.instance.mainMenu.enabled = !1), Game.instance.shop.enabled = !1, Game.levelDebug ? Game.instance.prepareQuick(Game.instance._LEVEL_NUMBER, Game.instance._BONUS_LEVEL) : Game.instance.prepareLevel(!1), Game.instance.applyChosenSkin(), Environment.instance.switchTo(Game.instance.envType), Game.instance.restart()
-        }))
-    }), 100)
+    const startGame = () => {
+        Game.instance.uiAdLoading.enabled = !1;
+        Game.instance.uiSplash.enabled = !1;
+        setTimeout(() => {
+            FadeScreen.instance.show(0.5, 0, true, () => {
+                Input.mouseDis = !1;
+                if (Game.instance.currLevel === 1 && Game.levelDebug === 0) {
+                    Game.instance.interface.enabled = !1;
+                    Game.instance.mainMenu.enabled = !1;
+                }
+                Game.instance.shop.enabled = !1;
+                if (Game.levelDebug) {
+                    Game.instance.prepareQuick(Game.instance._LEVEL_NUMBER, Game.instance._BONUS_LEVEL);
+                } else {
+                    Game.instance.prepareLevel(false);
+                }
+                Game.instance.applyChosenSkin();
+                Environment.instance.switchTo(Game.instance.envType);
+                Game.instance.restart();
+            });
+        }, 100);
+    };
+
+    ysdk.adv.showFullscreenAdv({
+        callbacks: {
+            onOpen: () => {
+                console.log('Fullscreen ad open.');
+                this.adPauseGame();
+            },
+            onClose: (wasShown) => {
+                console.log('Fullscreen ad closed.');
+                this.adResumeGame();
+                startGame();
+            },
+            onError: (e) => {
+                console.log('Error while open fullscreen ad:', e);
+                this.adResumeGame();
+                startGame();
+            },
+        }
+    });
 }, Game.prototype.saveGame = function() {
+    const dataToSave = {
+        firstKnifeTapped: this.firstKnifeTapped,
+        firstLaunch: this.firstLaunch,
+        currLevel: this.currLevel,
+        chosenSkinId: this.chosenSkinId,
+        money: this.money,
+        bestScore: this.bestScore,
+        envType: this.envType,
+        envTypeSameCount: this.envTypeSameCount,
+    };
+    for (var e = 0; e < ShopController.shopItems.length; e++) {
+        dataToSave["skin" + e.toString()] = ShopController.shopItems[e].unlocked ? 1 : 0;
+    }
+    if (ysdk) {
+        ysdk.getPlayer().setData(dataToSave).then(() => {
+            console.log('Game data saved to cloud.');
+        }).catch(console.error);
+    }
     Savefile.set("firstKnifeTapped", this.firstKnifeTapped), Savefile.set("firstLaunch", this.firstLaunch), Savefile.set("currLevel", this.currLevel), Savefile.set("chosenSkinId", this.chosenSkinId), Savefile.set("money", this.money), Savefile.set("bestScore", this.bestScore), Savefile.set("envType", this.envType), Savefile.set("envTypeSameCount", this.envTypeSameCount);
     for (var e = 0; e < ShopController.shopItems.length; e++) ShopController.shopItems[e].unlocked ? Savefile.set("skin" + e.toString(), 1) : Savefile.set("skin" + e.toString(), 0);
     Savefile.save()
@@ -1722,14 +1779,14 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
     }
 }, Game.prototype.revive = function() {
     this.gotReviveChance = !1, FadeScreen.instance.show(.5, .15, 1, (function() {
-        Knife.instance.reviveAtLastStuckPos(), Game.state = Game.STATE_PLAYING, PokiSDK && PokiSDK.gameplayStart(), Game.instance.controlsEnabled = !0, Game.instance.interface.enabled = !0, Game.instance.uiFailed.enabled = !1, Game.instance.uiCompleted.enabled = !1, Game.instance.setupPlayingCamera(!0)
+        Knife.instance.reviveAtLastStuckPos(), Game.state = Game.STATE_PLAYING, ysdk.features.GameplayAPI.start(), Game.instance.controlsEnabled = !0, Game.instance.interface.enabled = !0, Game.instance.uiFailed.enabled = !1, Game.instance.uiCompleted.enabled = !1, Game.instance.setupPlayingCamera(!0)
     }))
 }, Game.prototype.onGameOver = function(e) {
     if (Game.state == Game.STATE_GAMEOVER) return 1;
     "spikes" != e && "ground" != e || GameAudio.play("knifefall"), Game.state = Game.STATE_GAMEOVER, this.controlsEnabled = !1, this.gameOverReason = e, Game.wasBonusLevel = !1, Game.bonusLevel && (Game.wasBonusLevel = !0, Game.bonusLevel = !1, this.currLevel++, this.prepareLevel(!1)), this.interface.enabled = !1;
     var t = CameraController.instance;
     t.distance = 12, t.pitch = -10, FadeScreen.instance.show(.3, 1, 0, (function() {
-        PokiSDK && PokiSDK.gameplayStop(), Game.instance.currLevel > 0 ? (GameAudio.play("gameover"), Game.instance.uiFailed.enabled = !0) : Game.instance.restart()
+        ysdk.features.GameplayAPI.stop(), Game.instance.currLevel > 0 ? (GameAudio.play("gameover"), Game.instance.uiFailed.enabled = !0) : Game.instance.restart()
     }))
 }, Game.prototype.formNextLevel = function() {
     Environment.instance.switchType()
@@ -1752,7 +1809,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
     if (Game.state == Game.STATE_LEVELCOMPLETED) return 1;
     Game.state = Game.STATE_LEVELCOMPLETED, this.envTypeSameCount++, e || Game.bonusLevel || this.stepsToBonusLevel--, this.stepsToBonusLevel <= 0 && (this.bonusReady = !0, this.stepsToBonusLevel = 5), Game.goBonus = e, null != Game.instance.bonusOperator ? (Game.instance.bonusMultiplier, Game.instance.bonusEarned = FinishController.instance.applyOperatorData(Game.instance.moneyEarned, Game.instance.bonusOperator), Game.instance.bonusOperator.operator == OperatorType.ADD || Game.instance.bonusOperator.operator == OperatorType.MULTIPLY ? this.resultType = 0 : Game.instance.bonusEarned < Game.instance.moneyEarned && (this.resultType = 1)) : (Game.instance.bonusEarned = this.moneyEarned, this.resultType = 2), Game.instance.bonusEarned = Math.max(0, Game.instance.bonusEarned), Game.instance.totalEarned = Game.instance.bonusEarned, Game.instance.interface.enabled = !1, this.controlsEnabled = !1;
     var t = CameraController.instance;
-    t.camShift.set(.95, -.3, 0), t.distance = 12, t.pitch = 0, t.yaw = 1, t.lerpSpeed = 2, t.lerpAngle = .2, FinishController.instance.showFlag(), UiMainMenu.hideCap = !0, PokiSDK && PokiSDK.gameplayStop(), Game.goBonus ? FadeScreen.instance.show(.3, 2, 0, (function() {
+    t.camShift.set(.95, -.3, 0), t.distance = 12, t.pitch = 0, t.yaw = 1, t.lerpSpeed = 2, t.lerpAngle = .2, FinishController.instance.showFlag(), UiMainMenu.hideCap = !0, ysdk.features.GameplayAPI.stop(), Game.goBonus ? FadeScreen.instance.show(.3, 2, 0, (function() {
         Game.levelDebug || Game.instance.prepareLevel(!0), Game.instance.restart()
     })) : (this.currLevel++, Game.levelDebug || Game.instance.prepareLevel(!1), FadeScreen.instance.show(.3, 2, 0, (function() {
         Game.instance.uiCompleted.enabled = !0
@@ -1763,7 +1820,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
     a.camShift.set(1.2, -1, 0), a.distance = 15.3, a.pitch = -15, a.yaw = -35, a.yawCurr = -15, a.lerpSpeed = 1, a.lerpAngle = 1, e && (a.currPos.set(t.x - 5, t.y + 3, 10), a.entity.setLocalPosition(a.currPos))
 }, Game.prototype.onJump = function() {
     Knife.instance.entity.getPosition();
-    (GameAudio.playEx("swoosh", 1 + pc.math.random(-.1, .1)), this.firstJump) && (Game.state = Game.STATE_PLAYING, this.firstJump = !1, PokiSDK && PokiSDK.gameplayStart(), Game.bonusLevel || (this.moneyEarned = 0, this.score = 0), this.setupPlayingCamera(!1), CameraController.instance.camShift.set(2.2, -1, 0), 0 == this.currLevel ? this.interface.enabled = !1 : this.interface.enabled = !0, this.mainMenu.enabled = !1)
+    (GameAudio.playEx("swoosh", 1 + pc.math.random(-.1, .1)), this.firstJump) && (Game.state = Game.STATE_PLAYING, this.firstJump = !1, ysdk.features.GameplayAPI.start(), Game.bonusLevel || (this.moneyEarned = 0, this.score = 0), this.setupPlayingCamera(!1), CameraController.instance.camShift.set(2.2, -1, 0), 0 == this.currLevel ? this.interface.enabled = !1 : this.interface.enabled = !0, this.mainMenu.enabled = !1)
 }, Game.prototype.onKnifeInGround = function() {
     CameraController.instance.lerpSpeed = 1, Game.state != Game.STATE_INTRO && GameAudio.playEx("woodhit", 1 + pc.math.random(.5, .6))
 }, Game.prototype.onKnifeOutGround = function() {
@@ -1793,7 +1850,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
     if (this.streakTimer > 0 && (this.streakTimer -= e, this.streakTimer <= 0)) {
         if (this.streak > 18) {
             var t, a = this.whiteColor;
-            this.streak > 50 ? (a = this.yellowColor, t = MathUtil.choose("INCREDIBLE!", "TERRIFIC!", "FANTASTIC!")) : t = this.streak > 25 ? MathUtil.choose("AMAZING!", "AWESOME!", "WOW!") : MathUtil.choose("NICE!", "GREAT!", "EXCELLENT!"), Game.instance.showStreakText(t, 0, 1, a, 1, 1), GameAudio.play("streak")
+            this.streak > 50 ? (a = this.yellowColor, t = MathUtil.choose("НЕВЕРОЯТНО!", "ПОТРЯСАЮЩЕ!", "ФАНТАСТИКА!")) : t = this.streak > 25 ? MathUtil.choose("УДИВИТЕЛЬНО!", "КРУТО!", "ВАУ!") : MathUtil.choose("НЕПЛОХО!", "ОТЛИЧНО!", "ПРЕВОСХОДНО!"), Game.instance.showStreakText(t, 0, 1, a, 1, 1), GameAudio.play("streak")
         }
         this.streak = 0, this.streakTimer = 0
     }
@@ -1816,7 +1873,7 @@ Game.tempPos = new pc.Vec3, Game.tempPos2 = new pc.Vec3, Game.instance = null, G
 }, Game.prototype.restart = function(e) {
     Knife.instance.trail1.flushTrail(), Knife.instance.trail2.flushTrail(), e && (UiMainMenu.hideCap = !0), Game.state = Game.STATE_INTRO, this.gotReviveChance = !0, this.pause(!1), this.streak = 0, this.streakTimer = 0, this.levelUpperPlank = 0, this.loadLevel();
     var t = Knife.instance.entity.getPosition();
-    (this.setupPlayingCamera(!0), this.firstJump = !0, Game.bonusLevel ? (Environment.instance.setType(6), this.interface.enabled = !0, this.mainMenu.enabled = !1) : (this.currLevel != this.lastCurrLevel && (this.lastCurrLevel = this.currLevel), this.moneyEarned = 0, this.score = 0, this.envTypeSameCount >= 4 ? (Environment.instance.switchType(), Game.instance.envType = Environment.instance.type, this.envTypeSameCount = 0) : Environment.instance.setType(Game.instance.envType), this.saveGame(), this.interface.enabled = !1, 0 == this.currLevel ? this.mainMenu.enabled = !1 : this.mainMenu.enabled = !0), e) ? UiMainMenu.hideCap && (this.levText && (this.levText.destroy(), this.levText = null), this.levText = this.showLvlText("LEVEL " + this.currLevel.toString(), t.x + 4.5, t.y + 1)): CameraController.instance.camShift.y = .5;
+    (this.setupPlayingCamera(!0), this.firstJump = !0, Game.bonusLevel ? (Environment.instance.setType(6), this.interface.enabled = !0, this.mainMenu.enabled = !1) : (this.currLevel != this.lastCurrLevel && (this.lastCurrLevel = this.currLevel), this.moneyEarned = 0, this.score = 0, this.envTypeSameCount >= 4 ? (Environment.instance.switchType(), Game.instance.envType = Environment.instance.type, this.envTypeSameCount = 0) : Environment.instance.setType(Game.instance.envType), this.saveGame(), this.interface.enabled = !1, 0 == this.currLevel ? this.mainMenu.enabled = !1 : this.mainMenu.enabled = !0), e) ? UiMainMenu.hideCap && (this.levText && (this.levText.destroy(), this.levText = null), this.levText = this.showLvlText("УРОВЕНЬ " + this.currLevel.toString(), t.x + 4.5, t.y + 1)): CameraController.instance.camShift.y = .5;
     UiMainMenu.hideCap = !1, Environment.instance.createGrounds(), this.uiFailed.enabled = !1, this.uiCompleted.enabled = !1, this.controlsEnabled = !0
 }, Game.noDebug = !0, Game.levelDebug = !1, Game.debugOutput = !1, Game.prototype.update = function(e) {
     if (this.inputBlockTimer > 0 ? (Game.instance.uiAdLoading.enabled = !0, this.inputBlockTimer -= e, this.inputBlockTimer <= 0 && (this.inputBlockTimer = 0, Input.mouseDis = !1)) : Game.instance.uiAdLoading.enabled = !1, window.scrollTo(0, 10), this.setResolution(), this.shopRewardCooldownCurr > 0 && (this.shopRewardCooldownCurr -= e), Game.state == Game.STATE_PLAYING) {
@@ -1844,28 +1901,84 @@ Gui.instance = null, Gui.pages = [], Gui.prototype.initialize = function() {}, G
             Game.instance.money -= n, ShopController.instance.unlockRandomSkin(), MoneyForAdbutton.instance.reconfigure();
             break;
         case "ShopMoneyForReward":
-            Game.instance && Game.instance.requestRewardedAd((() => {
-                console.log("Rewarded ad was successful, granting reward..."), FadeScreen.instance.show(.4, 0, !0, (function() {
-                    Game.instance.shopRewardCooldownCurr = Game.instance.shopRewardCooldown, Game.instance.addMoney(MoneyForAdbutton.instance.count), Game.instance.saveGame()
-                }))
-            }));
+            ysdk.adv.showRewardedVideo({
+                callbacks: {
+                    onOpen: () => {
+                        Game.instance.adPauseGame();
+                    },
+                    onRewarded: () => {
+                        console.log("Rewarded ad was successful, granting reward..."), FadeScreen.instance.show(.4, 0, !0, (function() {
+                            Game.instance.shopRewardCooldownCurr = Game.instance.shopRewardCooldown, Game.instance.addMoney(MoneyForAdbutton.instance.count), Game.instance.saveGame()
+                        }))
+                    },
+                    onClose: () => {
+                        Game.instance.adResumeGame();
+                    },
+                    onError: (e) => {
+                        console.log('Error while open video ad:', e);
+                        Game.instance.adResumeGame();
+                    }
+                }
+            });
             break;
         case "ClaimScore":
             Game.instance.addMoney(Game.instance.totalEarned), Game.instance.saveGame(), FadeScreen.instance.show(.3, 0, 0, (function() {
-                Game.instance.restart(!0), PokiSDK && Game.instance.requestAd()
+                Game.instance.restart(!0);
+                ysdk.adv.showFullscreenAdv({
+                    callbacks: {
+                        onOpen: () => {
+                            Game.instance.adPauseGame();
+                        },
+                        onClose: () => {
+                            Game.instance.adResumeGame();
+                        },
+                        onError: (e) => {
+                            console.log('Error while open fullscreen ad:', e);
+                            Game.instance.adResumeGame();
+                        }
+                    }
+                });
             }));
             break;
         case "Claimx3ScoreForReward":
-            Game.instance && Game.instance.requestRewardedAd((() => {
-                console.log("Rewarded ad was successful, granting reward..."), Game.instance.addMoney(3 * Game.instance.totalEarned), Game.instance.saveGame(), FadeScreen.instance.show(.3, 0, 0, (function() {
-                    Game.instance.restart(!0)
-                }))
-            }));
+            ysdk.adv.showRewardedVideo({
+                callbacks: {
+                    onOpen: () => {
+                        Game.instance.adPauseGame();
+                    },
+                    onRewarded: () => {
+                        console.log("Rewarded ad was successful, granting reward..."), Game.instance.addMoney(3 * Game.instance.totalEarned), Game.instance.saveGame(), FadeScreen.instance.show(.3, 0, 0, (function() {
+                            Game.instance.restart(!0)
+                        }))
+                    },
+                    onClose: () => {
+                        Game.instance.adResumeGame();
+                    },
+                    onError: (e) => {
+                        console.log('Error while open video ad:', e);
+                        Game.instance.adResumeGame();
+                    }
+                }
+            });
             break;
         case "YesReviveForReward":
-            Game.instance && Game.instance.requestRewardedAd((() => {
-                console.log("Rewarded ad was successful, granting reward..."), Game.instance.revive()
-            }));
+            ysdk.adv.showRewardedVideo({
+                callbacks: {
+                    onOpen: () => {
+                        Game.instance.adPauseGame();
+                    },
+                    onRewarded: () => {
+                        console.log("Rewarded ad was successful, granting reward..."), Game.instance.revive()
+                    },
+                    onClose: () => {
+                        Game.instance.adResumeGame();
+                    },
+                    onError: (e) => {
+                        console.log('Error while open video ad:', e);
+                        Game.instance.adResumeGame();
+                    }
+                }
+            });
             break;
         case "NoReviveForReward":
             UiFailed.instance.onEnableCb(!0);
@@ -1874,7 +1987,21 @@ Gui.instance = null, Gui.pages = [], Gui.prototype.initialize = function() {}, G
             break;
         case "failRestart":
             FadeScreen.instance.show(.3, 0, 0, (function() {
-                Game.instance.addMoney(Game.instance.moneyEarned), Game.bonusLevel && (Game.bonusLevel = !1), Game.instance.restart(), PokiSDK && Game.instance.requestAd()
+                Game.instance.addMoney(Game.instance.moneyEarned), Game.bonusLevel && (Game.bonusLevel = !1), Game.instance.restart();
+                ysdk.adv.showFullscreenAdv({
+                    callbacks: {
+                        onOpen: () => {
+                            Game.instance.adPauseGame();
+                        },
+                        onClose: () => {
+                            Game.instance.adResumeGame();
+                        },
+                        onError: (e) => {
+                            console.log('Error while open fullscreen ad:', e);
+                            Game.instance.adResumeGame();
+                        }
+                    }
+                });
             }));
             break;
         case "openSettingsCompl":
@@ -1897,14 +2024,6 @@ Gui.instance = null, Gui.pages = [], Gui.prototype.initialize = function() {}, G
         case "shopOpen":
             ShopButton.instance && 0 == Game.instance.firstKnifeTapped && ShopButton.instance.isNewKnifeAvailable() && (Game.instance.firstKnifeTapped = 1, Game.instance.saveGame()), Game.instance.controlsEnabled = !1, FadeScreen.instance.show(.3, 0, 0, (function() {
                 Game.instance.shop.enabled = !0, Game.instance.mainMenu.enabled = !1
-            }));
-            break;
-        case "restartGame":
-            Game.instance.interface.enabled = !0, Game.bonusLevel = !1, setTimeout((function() {
-                if (Uipopup.isShown("Pause")) return 1;
-                Game.instance.pause(!1)
-            }), 600), Uipopup.close("Pause"), FadeScreen.instance.show(.5, 0, 0, (function() {
-                Game.instance.restart(), PokiSDK && Game.instance.requestAd()
             }));
             break;
         case "startGame":
@@ -1940,10 +2059,29 @@ Gui.instance = null, Gui.pages = [], Gui.prototype.initialize = function() {}, G
         case "resumeGame":
             Game.instance.interface.enabled = !0, setTimeout((function() {
                 Game.instance.pause(!1)
-            }), 400), Uipopup.close("Pause"), PokiSDK && PokiSDK.gameplayStart();
+            }), 400), Uipopup.close("Pause"), ysdk.features.GameplayAPI.start();
+            break;
+        case "restartGame":
+            FadeScreen.instance.show(.3, 0, 0, (function() {
+                Game.instance.restart();
+                ysdk.adv.showFullscreenAdv({
+                    callbacks: {
+                        onOpen: () => {
+                            Game.instance.adPauseGame();
+                        },
+                        onClose: () => {
+                            Game.instance.adResumeGame();
+                        },
+                        onError: (e) => {
+                            console.log('Error while open fullscreen ad:', e);
+                            Game.instance.adResumeGame();
+                        }
+                    }
+                });
+            }));
             break;
         case "pauseGame":
-            Game.instance.interface.enabled = !1, Uipopup.open("Pause", !0), Game.instance.pause(!0), PokiSDK && PokiSDK.gameplayStop();
+            Game.instance.interface.enabled = !1, Uipopup.open("Pause", !0), Game.instance.pause(!0), ysdk.features.GameplayAPI.stop();
             break;
         case "openTutor":
             MyButton.setClickable(Game.instance.gameOver, !1), MyButton.setClickable(Game.instance.mainMenu, !1), Uipopup.open("Tutorial", !0);
@@ -3345,7 +3483,7 @@ var CurrLevelText = pc.createScript("currLevelText");
 CurrLevelText.prototype.initialize = function() {
     this.onEnable(), this.on("enable", this.onEnable, this)
 }, CurrLevelText.prototype.onEnable = function() {
-    Game.levelDebug ? this.entity.element.text = "level " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "level " + Game.instance.currLevel.toString()
+    Game.levelDebug ? this.entity.element.text = "уровень " + Game.instance._LEVEL_NUMBER.toString() : this.entity.element.text = "уровень " + Game.instance.currLevel.toString()
 }, CurrLevelText.prototype.update = function(e) {};
 var WaterMaterial = pc.createScript("waterMaterial");
 WaterMaterial.attributes.add("uspeed", {
@@ -3391,7 +3529,7 @@ UiCompleted.attributes.add("textColors", {
     for (window.innerHeight > window.innerWidth ? (e.referenceResolution.y = this.initialHeight + 170, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)) : (e.referenceResolution.y = this.initialHeight, e.resolution = new pc.Vec2(e.referenceResolution.x, e.referenceResolution.y)), this.countingTotal = !1, this.countingTotalResultBest = !1, this.prevBestScore = Game.instance.bestScore, Game.instance.bestScore < Game.instance.totalEarned && (Game.instance.bestScore = Game.instance.totalEarned); this.serps.length > 0;) {
         this.serps.pop().destroy()
     }
-    this.counterTimer = 0, this.counterId = 0, this.playSoundDelay = 1, this.earned.script.counterText.setValue(0, Game.instance.moneyEarned, 0), Game.instance.bonusOperator ? this.bonus.element.text = Game.instance.bonusOperator.text : this.bonus.element.text = "0", this.bonus.element.color = this.textColors[Game.instance.resultType], this.best.element.text = this.prevBestScore.toString(), this.total.element.color = this.bonusColors[0], this.totalUpper.element.color = this.bonusColors[0], 1 == Game.instance.resultType ? this.bonus.element.outlineColor = Game.instance.whiteColor : this.bonus.element.outlineColor = Game.instance.blackColor, this.total.script.counterText.setValue(0, Game.instance.totalEarned, 0), Game.instance.totalEarned > 0 ? this.rewButton.enabled = !0 : this.rewButton.enabled = !1, Game.instance.currLevel - 1 == 0 ? this.levelnum.element.text = "TUTORIAL COMPLETED!" : this.levelnum.element.text = "LEVEL " + (Game.instance.currLevel - 1).toString() + " COMPLETED!"
+    this.counterTimer = 0, this.counterId = 0, this.playSoundDelay = 1, this.earned.script.counterText.setValue(0, Game.instance.moneyEarned, 0), Game.instance.bonusOperator ? this.bonus.element.text = Game.instance.bonusOperator.text : this.bonus.element.text = "0", this.bonus.element.color = this.textColors[Game.instance.resultType], this.best.element.text = this.prevBestScore.toString(), this.total.element.color = this.bonusColors[0], this.totalUpper.element.color = this.bonusColors[0], 1 == Game.instance.resultType ? this.bonus.element.outlineColor = Game.instance.whiteColor : this.bonus.element.outlineColor = Game.instance.blackColor, this.total.script.counterText.setValue(0, Game.instance.totalEarned, 0), Game.instance.totalEarned > 0 ? this.rewButton.enabled = !0 : this.rewButton.enabled = !1, Game.instance.currLevel - 1 == 0 ? this.levelnum.element.text = "ОБУЧЕНИЕ ПРОЙДЕНО!" : this.levelnum.element.text = "УРОВЕНЬ " + (Game.instance.currLevel - 1).toString() + " ПРОЙДЕН!"
 }, UiCompleted.prototype.update = function(e) {
     if (this.countingTotal && (this.total.script.counterText.shownValue > this.prevBestScore && (this.countingTotalResultBest || (this.total.element.color = this.bonusColors[1], this.totalUpper.element.color = this.bonusColors[1], this.countingTotalResultBest = !0)), this.countingTotalResultBest && (this.best.element.text = this.total.script.counterText.shownValue.toString())), this.counterId > 3) return 1;
     this.counterTimer += e, this.playSoundDelay > 0 && (this.playSoundDelay -= e, this.playSoundDelay <= 0 && (0 == Game.instance.resultType ? (GameAudio.play("gamewin"), this.createSerpentines(15, new pc.Vec3(0, 25, 0), 150)) : 1 == Game.instance.resultType && GameAudio.play("gamefail"))), this.counterTimer > .75 && (this.counterId++, this.counterTimer = 0, 1 == this.counterId ? (Game.instance.moneyEarned > 0 && GameAudio.playEx("counter", 1), this.earned.script.counterText.changingSpeed = 3 * Game.instance.moneyEarned) : 2 == this.counterId || 3 == this.counterId && (this.countingTotal = !0, Game.instance.totalEarned > 0 && GameAudio.playEx("counter", 1), this.total.script.counterText.changingSpeed = 3 * Game.instance.totalEarned))
