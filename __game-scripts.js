@@ -3876,7 +3876,7 @@ pc.script.createLoadingScreen((function(g) {
         var A = document.getElementById("img_loadingbaroverlay");
         A && (g = Math.min(1, Math.max(0, g)), A.style.width = 100 * g + "%")
     })), g.on("start", dg_hide_loading_pls)
-})), document.title = "Slice Master – Play it now at CoolmathGames.com";
+})), document.title = "Кизлярский нож";
 var Sdkmanager = pc.createScript("sdkmanager");
 Sdkmanager.instance = null, Sdkmanager.attributes.add("sdktype", {
     type: "number",
