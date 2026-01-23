@@ -1,0 +1,19 @@
+{
+    "application_properties": {
+        "width": 1280,
+        "height": 720,
+        "use_legacy_scripts": false,
+        "resolution_mode": "AUTO",
+        "fill_mode": "FILL_WINDOW",
+        "use_device_pixel_ratio": true,
+        "transparent_canvas": false,
+        "prefer_webgl2": true
+    },
+    "assets": {},
+    "scenes": {
+        "2360643": {
+            "name": "Main Scene",
+            "url": "2360643.json"
+        }
+    }
+}
