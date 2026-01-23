@@ -114,6 +114,8 @@
         // Rewarded video ad function
         function showYandexRewardedAd(callbacks) {
             if (window.ysdk) {
+                // Stop gameplay before showing ad
+                notifyGameplayStop();
                 window.ysdk.adv.showRewardedVideo({
                     callbacks: {
                         onOpen: function() {
@@ -126,10 +128,14 @@
                         },
                         onClose: function() {
                             console.log('Video ad closed.');
+                            // Resume gameplay after ad closes
+                            notifyGameplayStart();
                             if (callbacks && callbacks.onClose) callbacks.onClose();
                         },
                         onError: function(e) {
                             console.log('Error while open video ad:', e);
+                            // Resume gameplay on error as well
+                            notifyGameplayStart();
                             if (callbacks && callbacks.onError) callbacks.onError(e);
                         }
                     }
@@ -145,6 +151,8 @@
         // Fullscreen ad function
         function showYandexFullscreenAd(callbacks) {
             if (window.ysdk) {
+                // Stop gameplay before showing ad
+                notifyGameplayStop();
                 window.ysdk.adv.showFullscreenAdv({
                     callbacks: {
                         onOpen: function() {
@@ -153,10 +161,14 @@
                         },
                         onClose: function(wasShown) {
                             console.log('Fullscreen ad closed, wasShown:', wasShown);
+                            // Resume gameplay after ad closes
+                            notifyGameplayStart();
                             if (callbacks && callbacks.onClose) callbacks.onClose(wasShown);
                         },
                         onError: function(e) {
                             console.log('Error while open fullscreen ad:', e);
+                            // Resume gameplay on error as well
+                            notifyGameplayStart();
                             if (callbacks && callbacks.onError) callbacks.onError(e);
                         }
                     }
@@ -204,11 +216,17 @@
                 notifyGameplayStop();
             },
             commercialBreak: function(callback) {
-                showYandexFullscreenAd({
-                    onOpen: callback,
-                    onClose: function() {}
+                return new Promise(function(resolve) {
+                    showYandexFullscreenAd({
+                        onOpen: callback,
+                        onClose: function(wasShown) {
+                            resolve(wasShown);
+                        },
+                        onError: function() {
+                            resolve(false);
+                        }
+                    });
                 });
-                return Promise.resolve();
             },
             rewardedBreak: function(callback) {
                 return new Promise(function(resolve) {
