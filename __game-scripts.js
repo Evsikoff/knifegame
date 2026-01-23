@@ -3026,7 +3026,7 @@ Jumper.attributes.add("delayStart", {
                 right: 0,
                 padding: "5px 10px",
                 height: "30px",
-                fontSize: "24px",
+                fontSize: "20px",
                 fontFamily: "Consolas, Andale Mono, monospace",
                 zIndex: 2
             },
