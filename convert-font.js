@@ -4,7 +4,7 @@ const msdfFont = JSON.parse(fs.readFileSync('./font-output/MyFont.json', 'utf-8'
 const config = JSON.parse(fs.readFileSync('./config.json', 'utf-8'));
 
 const playcanvasChars = {};
-const glyphSize = 32; // тот же размер что при генерации
+const glyphSize = 28; // тот же размер что при генерации
 
 msdfFont.chars.forEach(char => {
     playcanvasChars[char.id] = {
