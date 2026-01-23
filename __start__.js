@@ -273,6 +273,7 @@
         app.configure(window.CONFIG_FILENAME, (err) => {
             if (err) {
                 console.error(err);
+                displayError('Failed to load config: ' + window.CONFIG_FILENAME + '. Error: ' + err);
                 return;
             }
 
@@ -297,6 +298,7 @@
                     app.scenes.loadScene(window.SCENE_PATH, (err) => {
                         if (err) {
                             console.error(err);
+                            displayError('Failed to load scene: ' + window.SCENE_PATH + '. Error: ' + err);
                             return;
                         }
 
@@ -310,6 +312,7 @@
     function main() {
         createGraphicsDevice((device) => {
             if (!device) {
+                displayError('Failed to create graphics device. Your browser may not support WebGL.');
                 return;
             }
 

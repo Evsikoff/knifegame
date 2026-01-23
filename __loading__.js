@@ -150,11 +150,12 @@ pc.script.createLoadingScreen(function (app) {
     function setRotatingImagesContainerHeight() {
         const rotatingImagesContainer = document.getElementById('rotatingImagesContainer');
         
-        if (rotatingImagesContainer)
-        if (isPortrait()) {
-            rotatingImagesContainer.style.height = `${window.innerHeight * 0.025}px`; // Высота 2.5% экрана в портретном режиме
-        } else {
-            rotatingImagesContainer.style.height = `${window.innerHeight * 0.038}px`; // Высота 3.8% экрана в альбомном режиме
+        if (rotatingImagesContainer) {
+            if (isPortrait()) {
+                rotatingImagesContainer.style.height = `${window.innerHeight * 0.025}px`; // Высота 2.5% экрана в портретном режиме
+            } else {
+                rotatingImagesContainer.style.height = `${window.innerHeight * 0.038}px`; // Высота 3.8% экрана в альбомном режиме
+            }
         }
     }
 
